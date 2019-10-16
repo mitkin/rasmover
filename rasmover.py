@@ -23,14 +23,25 @@
  *                                                                         *
  ***************************************************************************/
 """
+import sip
+sip.setapi('QDate', 2)
+sip.setapi('QDateTime', 2)
+sip.setapi('QString', 2)
+sip.setapi('QTextStream', 2)
+sip.setapi('QTime', 2)
+sip.setapi('QUrl', 2)
+sip.setapi('QVariant', 2)
+
 # Import the PyQt and QGIS libraries
-from PyQt4.QtCore import *
-from PyQt4.QtGui import *
-from qgis.core import *
-from qgis.gui import *
-from qgis.utils import *
+from PyQt4.QtCore import QSettings, Qt, QTranslator, QCoreApplication, QFileInfo
+from PyQt4.QtGui import QAction, QIcon
+from qgis.core import QGis, QgsCoordinateReferenceSystem, QgsMapLayerRegistry, QgsRasterLayer, QgsCoordinateTransform
+from qgis.gui import QgsRubberBand, QgsMapTool
+from qgis.utils import iface
+
 # Initialize Qt resources from file resources.py
 import resources_rc
+
 # Import the code for the dialog
 from rasmoverdialog import rasmoverDialog
 import os.path
@@ -46,15 +57,15 @@ try:
 except ImportError:
   import gdal
 
-
 rb=QgsRubberBand(iface.mapCanvas(),QGis.Point )
 rl=QgsRubberBand(iface.mapCanvas(),QGis.Line )
 premuto= False
 linea=False
 point0=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
 point1=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
-class rasmover:
 
+
+class rasmover:
     def __init__(self, iface):
         # Save reference to the QGIS interface
         self.iface = iface
@@ -96,12 +107,9 @@ class rasmover:
 
        
         tool = PointTool(self.iface.mapCanvas())
-        self.iface.mapCanvas().setMapTool(tool)  
-    
-       
+        self.iface.mapCanvas().setMapTool(tool)      
   
 class PointTool(QgsMapTool):  
-
         
         def __init__(self, canvas):
         
@@ -136,9 +144,7 @@ class PointTool(QgsMapTool):
                   rl.reset(QGis.Line)
                   rl.addPoint(point0)  
                   rl.addPoint(point1)
-                  
-                  
-      
+                 
         def canvasReleaseEvent(self, event):
             global premuto,linea,rb,rl,point1,point0
             angle = math.atan2(point1.x() - point0.x(), point1.y() - point0.y())
@@ -252,7 +258,6 @@ class PointTool(QgsMapTool):
               print "Layer failed to load!"
               
             QgsMapLayerRegistry.instance().addMapLayer(rlayer)              
-            
 
 
         def activate(self):
