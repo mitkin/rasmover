@@ -24,26 +24,27 @@
  ***************************************************************************/
 """
 import sip
-sip.setapi('QDate', 2)
-sip.setapi('QDateTime', 2)
-sip.setapi('QString', 2)
-sip.setapi('QTextStream', 2)
-sip.setapi('QTime', 2)
-sip.setapi('QUrl', 2)
-sip.setapi('QVariant', 2)
+# sip.setapi('QDate', 2)
+# sip.setapi('QDateTime', 2)
+# sip.setapi('QString', 2)
+# sip.setapi('QTextStream', 2)
+# sip.setapi('QTime', 2)
+# sip.setapi('QUrl', 2)
+# sip.setapi('QVariant', 2)
 
 # Import the PyQt and QGIS libraries
-from PyQt4.QtCore import QSettings, Qt, QTranslator, QCoreApplication, QFileInfo
-from PyQt4.QtGui import QAction, QIcon
-from qgis.core import QGis, QgsCoordinateReferenceSystem, QgsMapLayerRegistry, QgsRasterLayer, QgsCoordinateTransform
-from qgis.gui import QgsRubberBand, QgsMapTool
+from PyQt5.QtCore import QSettings, Qt, QTranslator, QCoreApplication, QFileInfo
+from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QAction
+from qgis.core import QgsCoordinateReferenceSystem, QgsProject, QgsRasterLayer, QgsCoordinateTransform, QgsPoint, QgsLineString, QgsWkbTypes
+from qgis.gui import QgsRubberBand, QgsMapTool, QgsLayerTreeView
 from qgis.utils import iface
 
 # Initialize Qt resources from file resources.py
-import resources_rc
+from . import resources_rc
 
 # Import the code for the dialog
-from rasmoverdialog import rasmoverDialog
+from .rasmoverdialog import rasmoverDialog
 import os.path
 import math
 import sys, itertools, os, glob, subprocess, zipfile, zlib, tempfile
@@ -57,8 +58,8 @@ try:
 except ImportError:
   import gdal
 
-rb=QgsRubberBand(iface.mapCanvas(),QGis.Point )
-rl=QgsRubberBand(iface.mapCanvas(),QGis.Line )
+rb=QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
+rl=QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.LineGeometry)
 premuto= False
 linea=False
 point0=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
@@ -122,7 +123,7 @@ class PointTool(QgsMapTool):
             global rb ,premuto ,point0
             if not premuto: 
               premuto=True
-              rb=QgsRubberBand(iface.mapCanvas(),QGis.Point )
+              rb=QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry )
               rb.setColor ( Qt.red )
               point0 = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
               rb.addPoint(point0)  
@@ -141,7 +142,7 @@ class PointTool(QgsMapTool):
                else:
                 if linea: 
                   point1 = self.canvas.getCoordinateTransform().toMapCoordinates(x, y)
-                  rl.reset(QGis.Line)
+                  rl.reset(QgsWkbTypes.LineGeometry)
                   rl.addPoint(point0)  
                   rl.addPoint(point1)
                  
@@ -151,84 +152,94 @@ class PointTool(QgsMapTool):
             angle = math.degrees(angle)if angle>0 else (math.degrees(angle) + 180)+180
             premuto=False
             linea=False
-            actual_crs = self.canvas.mapRenderer().destinationCrs()
+            # actual_crs = self.canvas.mapRenderer().destinationCrs()
+            actual_crs = self.canvas.mapSettings().destinationCrs()
             crsDest = QgsCoordinateReferenceSystem(4326)  # WGS 84 / UTM zone 33N
-            xform = QgsCoordinateTransform(actual_crs, crsDest)
+            crsDest = QgsCoordinateReferenceSystem(4326)  # WGS 84 / UTM zone 33N
+            xform = QgsCoordinateTransform(actual_crs, crsDest, QgsProject.instance())
             pt1 = xform.transform(point0)
 
-            dbName = os.getenv("HOME")+'/.qgis2/python/plugins/rasmover/temp/coords'
+            current_dir = os.path.dirname(
+                os.path.abspath(__file__)
+            )
+
+            temp_dir = os.path.join(current_dir, "temp")
+
+            dbName = os.path.join(temp_dir, "coords")
 
             dx = point1.x() - point0.x()
             dy = point1.y() - point0.y()
 
             line = ""
-            
+
             f2 = open(dbName+'.csv', 'w')
 
-            f2.write("dx,dy\n")            
+            f2.write("dx,dy\n")
 
             line = ("%lf")      %( dx )
             line = ("%s,%lf\n") %( line, dy )
-            
+
             f2.write(line)
             f2.close()
 
 
-            out_folder = os.getenv("HOME")+'/.qgis2/python/plugins/rasmover/temp'
-            if _platform == "win32":
-               out_folder = out_folder.replace("\\","/")
+            out_folder = temp_dir
+            # if _platform == "win32":
+            #    out_folder = out_folder.replace("\\","/")
 
-#            print("%s\n") %(out_folder)
+            listaRaster = os.path.join(out_folder,  'lista.txt')
 
-            listaRaster = out_folder + '/lista.txt'
-            
-            f5   = open( listaRaster, 'w' )
+            f5   = open( listaRaster, 'a' )
 
             toglimi = 0
-                
+
             for iLayer in range(self.canvas.layerCount()):
                  layer = self.canvas.layer(iLayer)
-                 
+
                  if layer.type() == layer.RasterLayer:
                       if (layer.name() == "moved"):
-                         toglimi = layer.id()                        
-                      else:           
-                         fileIMAGE = str(layer.source())                  
+                         toglimi = layer.id()
+                      else:
+                         fileIMAGE = str(layer.source())
                          scrivimi = ("%s\n") %(fileIMAGE)
-                         f5.write( scrivimi )                                          
+                         f5.write( scrivimi )
+
+            # for layer in iface.layerTreeView().selectedLayers():
+            #     if layer.type() == layer.RasterLayer:
+            #          if (layer.name() == "moved"):
+            #             toglimi = layer.id()
+            #             QgsProject.instance().removeMapLayer(toglimi)
+            #          else:
+            #             fileIMAGE = str(layer.source())
+            #             scrivimi = ("%s\n") %(fileIMAGE)
+            #             f5.write( scrivimi )
 
             if (toglimi != 0):
-                 QgsMapLayerRegistry.instance().removeMapLayer(toglimi)
-                 #print("HO TOLTO %s\n") %("moved")                 
+                 QgsProject.instance().removeMapLayer(toglimi)
 
             f5.close()
-                 
-            fileVRT = ("%s") %(out_folder + '/original.vrt')
-            
-            subprocess.call([ "gdalbuildvrt", fileVRT, "-input_file_list", listaRaster ])            
-            if _platform == "win32":
-               fileVRT = fileVRT.replace("/","\\")
-                        
-            f1   = open(fileVRT, 'r')
 
-            f2   = open(out_folder + '/moved.vrt', 'w')
-                        
+            fileVRT = os.path.join(out_folder , 'original.vrt')
+            movedVrt = os.path.join(out_folder, "moved.vrt")
+
+            subprocess.call([ "gdalbuildvrt", fileVRT, "-input_file_list", listaRaster ])
+
+            f1   = open(fileVRT, 'r')
+            f2   = open(movedVrt, 'w')
+
             for line in f1:
                stringa = line
 
-               if(string.find(stringa,"<GeoTransform>") <> -1):
+               if(stringa.find("<GeoTransform>") != -1):
                   words1 = stringa.replace(">-","> -");
                   words2 = words1.replace(",-",", -");
                   words3 = words2.split();
-			  
-#                  print("%s") %( words[1].replace(",","") )
-#                  print("%s") %( words[4].replace(",","") )
 
                   coordX = words3[1].replace(",","")
-                  coordY = words3[4].replace(",","")  
-                  
+                  coordY = words3[4].replace(",","")
+
                   X = float( coordX ) + dx
-                  Y = float( coordY ) + dy                                 
+                  Y = float( coordY ) + dy
 
                   stringazza = "  <GeoTransform>"
                   stringazza = ("%s %lf, ") %( stringazza, X )
@@ -236,28 +247,28 @@ class PointTool(QgsMapTool):
                   stringazza = ("%s %s") %( stringazza, words3[3] )
                   stringazza = ("%s %lf,") %( stringazza, Y )
                   stringazza = ("%s %s ") %( stringazza, words3[5] )
-                  stringazza = ("%s %s ") %( stringazza, words3[6] )                                                      
+                  stringazza = ("%s %s ") %( stringazza, words3[6] )
                   f2.write(stringazza)
-                  
-                  
-               else:  
+
+
+               else:
                   f2.write(stringa)
 
 
             f2.close()
-            f1.close() 
+            f1.close()
 
             rl.reset()
-            rb.reset()  
+            rb.reset()
 
-            fileName = out_folder + '/moved.vrt'
+            fileName = movedVrt
             fileInfo = QFileInfo(fileName)
             baseName = fileInfo.baseName()
             rlayer = QgsRasterLayer(fileName, baseName)
             if not rlayer.isValid():
-              print "Layer failed to load!"
-              
-            QgsMapLayerRegistry.instance().addMapLayer(rlayer)              
+              print("Layer failed to load!")
+
+            QgsProject.instance().addMapLayer(rlayer)
 
 
         def activate(self):
@@ -273,4 +284,4 @@ class PointTool(QgsMapTool):
             return False
     
         def isEditTool(self):
-            return True    
+            return True

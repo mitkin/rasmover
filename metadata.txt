@@ -1,6 +1,6 @@
 [general]
 name = Rasmover
-qgisMinimumVersion = 2.0
+qgisMinimumVersion = 3.0
 about = Move (translate) manually raster layers
 description = Move (translate) manually raster layers, the result is a virtual raster (vrt) created using GDAL gdalbuildvrt tool.
 version = version 0.2

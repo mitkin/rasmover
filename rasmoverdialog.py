@@ -20,14 +20,14 @@
  ***************************************************************************/
 """
 
-from PyQt4 import QtCore, QtGui
-from ui_rasmover import Ui_rasmover
+from PyQt5 import QtCore, QtGui, QtWidgets
+from .ui_rasmover import Ui_rasmover
 # create the dialog for zoom to point
 
 
-class rasmoverDialog(QtGui.QDialog, Ui_rasmover):
+class rasmoverDialog(QtWidgets.QDialog, Ui_rasmover):
     def __init__(self):
-        QtGui.QDialog.__init__(self)
+        QtWidgets.QDialog.__init__(self)
         # Set up the user interface from Designer.
         # After setupUI you can access any designer object by doing
         # self.<objectname>, and you can use autoconnect slots - see
