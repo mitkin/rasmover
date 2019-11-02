@@ -23,5 +23,5 @@
 
 def classFactory(iface):
     # load rasmover class from file rasmover
-    from rasmover import rasmover
+    from .rasmover import rasmover
     return rasmover(iface)
