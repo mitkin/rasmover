@@ -154,10 +154,10 @@ class PointTool(QgsMapTool):
             linea=False
             # actual_crs = self.canvas.mapRenderer().destinationCrs()
             actual_crs = self.canvas.mapSettings().destinationCrs()
-            crsDest = QgsCoordinateReferenceSystem(4326)  # WGS 84 / UTM zone 33N
-            crsDest = QgsCoordinateReferenceSystem(4326)  # WGS 84 / UTM zone 33N
+            crsDest = QgsCoordinateReferenceSystem.fromEpsgId(32633)  # WGS 84 / UTM zone 33N
             xform = QgsCoordinateTransform(actual_crs, crsDest, QgsProject.instance())
-            pt1 = xform.transform(point0)
+            pt0 = xform.transform(point0)
+            pt1 = xform.transform(point1)
 
             current_dir = os.path.dirname(
                 os.path.abspath(__file__)
@@ -167,8 +167,8 @@ class PointTool(QgsMapTool):
 
             dbName = os.path.join(temp_dir, "coords")
 
-            dx = point1.x() - point0.x()
-            dy = point1.y() - point0.y()
+            dx = pt1.x() - pt0.x()
+            dy = pt1.y() - pt0.y()
 
             line = ""
 
