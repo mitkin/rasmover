@@ -21,7 +21,7 @@
 """
 
 from PyQt5 import QtCore, QtGui, QtWidgets
-from .ui_rasmover import Ui_rasmover
+from rasmover.ui_rasmover import Ui_rasmover
 # create the dialog for zoom to point
 
 

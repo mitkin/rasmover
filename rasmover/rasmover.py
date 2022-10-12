@@ -44,7 +44,7 @@ from qgis.utils import iface
 from . import resources_rc
 
 # Import the code for the dialog
-from .rasmoverdialog import rasmoverDialog
+from rasmover.rasmoverdialog import rasmoverDialog
 import os.path
 import math
 import sys, itertools, os, glob, subprocess, zipfile, zlib, tempfile
@@ -58,12 +58,6 @@ try:
 except ImportError:
   import gdal
 
-rb=QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
-rl=QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.LineGeometry)
-premuto= False
-linea=False
-point0=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
-point1=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
 
 
 class rasmover:
@@ -83,8 +77,14 @@ class rasmover:
             if qVersion() > '4.3.3':
                 QCoreApplication.installTranslator(self.translator)
 
-        # Create the dialog (after translation) and keep reference
-        self.dlg = rasmoverDialog()
+                # Create the dialog (after translation) and keep reference
+                self.dlg = rasmoverDialog()
+        self.rb=QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.PointGeometry)
+        self.rl=QgsRubberBand(iface.mapCanvas(), QgsWkbTypes.LineGeometry)
+        self.premuto= False
+        linea=False
+        point0=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
+        point1=iface.mapCanvas().getCoordinateTransform().toMapCoordinates(0, 0)
 
     def initGui(self):
         # Create action that will start plugin configuration
@@ -279,9 +279,13 @@ class PointTool(QgsMapTool):
     
         def isZoomTool(self):
             return False
-    
+
         def isTransient(self):
             return False
     
         def isEditTool(self):
             return True
+
+
+def convert_coords():
+    return None
